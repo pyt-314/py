@@ -1,8 +1,3 @@
-"""
-
-# SETUP
-"""
-
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jun 12 20:14:57 2023
@@ -581,6 +576,8 @@ class Env_stack:
         return self.reward[index]
     def __len__(self):
         return len(self.env)
+    def average(self):
+        return sum(self.reward)/len(self.reward)
 
 lr = 0.0001
 episodes = 100
@@ -607,7 +604,7 @@ for episode in range(episodes):
                 next_state, reward, done, info = env.step(j,action)
                 agent.update(state, prob, reward, next_state, done)
             else:
-                reward_history.append(env.toatal_reward(j))
+                reward_history.append(env.average())
                 state,info = env.reset(j)
     if episode % 10 == 0:
         print("episode :{}, total reward : {:.1f}".format(episode, reward_history[-1]))
