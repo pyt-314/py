@@ -300,7 +300,7 @@ class Softmax(Function):
         self.axis=axis
     def forward(self, x):
         x = x - np.max(x, axis=self.axis,keepdims=1)
-        self.out = np.exp(x*self.temp)/np.sum(np.exp(x*self.temp), axis=self.axis, keepdims=True)
+        self.out = np.exp(x*self.temp)/(np.sum(np.exp(x*self.temp), axis=self.axis, keepdims=True)+1e-8)
         return self.out
     def backward(self, dy):
         dx = self.out * dy
@@ -376,6 +376,16 @@ class MSE(Function):
         return np.sum(self.ans**2)/x.shape[0]
     def backward(self,dy=1):
         return -self.a/self.a.shape[0]*dy
+
+class coshy(Function):
+    def __init__(self):
+        pass
+    def forward(self,x):
+        x,ans = x
+        self.a = x-ans
+        return np.sum(np.log(np.cosh(self.a)))/len(self.a)
+    def backward(self,dy=1):
+        return np.tanh(self.a)*dy
 
 #========sub=========
 def softmax(x,temp):
@@ -580,9 +590,9 @@ class Env_stack:
         return sum(self.reward)/len(self.reward)
 
 lr = 0.0001
-episodes = 100
+episodes = 600
 
-env_n = 16
+env_n = 8
 env = Env_stack(game="CartPole-v1",N=env_n)
 po = PN()
 va = VN()
@@ -594,7 +604,7 @@ agent = ActorCritic(po,va,opt1,opt2)
 reward_history=[]
 for episode in range(episodes):
     total_reward = 0
-    for i in range(501):
+    for i in range(500):
         for j in range(len(env)):
             if i == 0:
                 state,info = env.reset(j)
@@ -604,9 +614,9 @@ for episode in range(episodes):
                 next_state, reward, done, info = env.step(j,action)
                 agent.update(state, prob, reward, next_state, done)
             else:
-                reward_history.append(env.average())
                 state,info = env.reset(j)
-    if episode % 10 == 0:
+    reward_history.append(env.average())
+    if episode % 30 == 0:
         print("episode :{}, total reward : {:.1f}".format(episode, reward_history[-1]))
 # plot
 plot_total_reward(reward_history)
